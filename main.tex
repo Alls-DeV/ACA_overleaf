@@ -1,14 +1,91 @@
-\documentclass{article}
-\usepackage{graphicx} % Required for inserting images
-
-\title{ACA_overleaf}
-\author{Alessio De Vito}
-\date{June 2026}
+\documentclass[a4paper,landscape]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{multicol}
+\usepackage{geometry}
+\usepackage{anyfontsize}
+\geometry{a4paper,left=7mm,right=7mm,top=7mm,bottom=7mm}
 
 \begin{document}
+\fontsize{13pt}{9.3pt}\selectfont
 
-\maketitle
+\begin{multicols}{4}
 
-\section{Introduction}
 
+\noindent \textbf{SISD} A serial (non-parallel) computer with deterministic execution, the oldest and most common type of computer.
+
+
+\noindent \textbf{MISD} A parallel computer, where a single data stream is fed into multiple processing units. Each processing unit operates on the data independently via independent instruction streams.
+
+
+\noindent \textbf{SIMD} A type of parallel computer, where all processing units execute the same instruction at any given clock cycle, each one operates on a different data stream. We have data pipelining into processing unit - e.g., useful for operations on matrices. It is best suited for specialized problems characterized by a high degree of regularity, such as graphics/image processing (GPUs) or machine learning
+
+\noindent \textbf{MIMD} Nowadays, the most common type of parallel computer; Execution can be synchronous or asynchronous, deterministic or non-deterministic; Scalable, fault tolerant.
+
+\noindent \textbf{Dependencies} are created at code-level and can be translated into conflicts when the compiler translate the code into instructions. An \textbf{hazard} is created whenever there is a conflict (and therefore a dependency) between instructions, and these instructions are close enough that the overlap caused by pipelining would change the order of access to the operands involved in the dependence.
+
+\noindent The \textbf{BTB} is a cache storing the predicted branch target address for the next instruction after a branch. The \textbf{BHT} is indexed by the last k-bits of the branch address, meaning that there are at most $2^k$ entries, with possible collisions, and each entry contains n-bits that says whether the branch was recently taken. \textbf{Correlating Branch Predictor}: the idea behind is that the behaviour of recent branches are correlated, that is the recent behaviour of other branches can influence the prediction of the current branch. In general (m, n) correlating predictor records last m branches to choose from $2^m$ BHTs, each of which is a n-bit predictor.
+
+\noindent \textbf{Fine grained} Switches from one thread to the other at each instruction; The execution of more threads is interleaved (often the switching is performed taking turns, skipping one thread if there is a stall); The CPU must be able to change thread at every clock cycle; it is necessary to duplicate the hardware resources. (+) It can hide both short and long stalls, since instructions from other threads is executed when one thread stalls. (+) It slows down execution of individual threads, since a thread ready to execute without stalls will be delayed by instructions from other threads.
+
+
+\noindent \textbf{Coarse grained} Switching from one thread to another occurs only when there are long stalls (miss cache); switching from one thread to the next requires different clock cycles to save the context. (+) In normal conditions the single thread is not slowed down. (+) Relieves need to have very fast thread-switching. (+) Doesn't slow down the single thread, since instructions from other threads are issued only when the thread encounters a costly stall. (-) For short stalls it does not reduce the throughput loss. (-) The CPU starts the execution of instructions that belonged to a single thread, when there is one stall it is necessary to empty the pipeline before starting the new thread.
+
+\noindent \textbf{SMT} The system can be dynamically adapted to the environment, allowing the execution of instructions from each thread, and allowing that the instructions of a single thread use all FUs if the other thread incurs in a long latency event; More threads grant more (instruction) issues possibilities by the CPU at each cycle; ideally, the exploitation of the issues availabilities is limited only by the unbalance between resources requests and availabilities.
+
+\noindent \textbf{Static Scheduling}
+Compilers can use algorithms for code scheduling to exploit ILP. The amount of parallelism available within a basic block, a straight-line code sequence with no branches in except to the entry and no branches out except at the exit, is quite small. Data dependence can further limit the amount of ILP we can exploit within a basic block to much less than the average basic block size. To obtain substantial performance enhancements, we must exploit ILP across multiple basic blocks (i.e., across branches). Static detection and resolution of dependencies are accomplished by the compiler, dependencies are avoided by code reordering. The output of the compiler is a reordered dependency-free code, which can be processed, for example, by the VLIW processors. (+) simple HW; (+) good compilers can effectively detect parallelism;  (-) huge number of registers to keep active the FUs;  (-) needed to store operands and results;  (-) large data transport capacity between FUs, register files, Register Files and Memory; (-) high bandwidth between i-cache and fetch unit; (-) large code size: use of (big) nops in the VLIW; (-) knowing branch probabilities requires significant extra steps in build process due to profiling
+
+\noindent \textbf{Loop Unrolling} extends the loop body to include multiple iterations, increasing ILP. It replicates the loop body and adjusts the loop termination condition, reducing loop overhead. Ideal when the number of iterations ($n$) is significant. Limiting factors: code size, number of registers.
+
+\noindent \textbf{Trace Scheduling} Loop unrolling is useful but does not cover other type of branches that limit the basic block size in control-flow intensive irregular code. In these cases is difficult to find ILP in individual basic blocks.
+Trace scheduling focus on traces: a loop-free sequence of basic blocks embedded in the control flow graph; it is an execution path which can be taken for some set of inputs; the chances that a trace is actually executed depends on the input set that allows its execution
+
+
+\noindent \textbf{RRF} manage a large number of registers by rotating register sets for each iteration. The Rotating Register Base points to the base of the current register set. Efficiently supports software pipelining and loop unrolling.
+
+\noindent \textbf{Software Pipelining} is a technique that overlaps loop iterations (i.e., subsequent iterations start before previous finished). Can be thought of as “symbolic” loop unrolling: the main difference is that loop unrolling needs to add some startup code before the loop as well as finish up code at the end. On the other hand, loop unrolling needs to replicate the entire code of the loop. For what concern the register pressure, the amount of registers used are not related to the type of scheduling but only to the architecture used. Due to the fact that loop unrolling at each iteration needs to repeat the computation, it needs to pay the cost of overhead and wind-down more times than software pipelining.
+
+\noindent \textbf{Dynamic Scheduling}
+Hardware reorders instruction execution to reduce pipeline stalls while maintaining data flow and exception behavior; (+) Handles unknown dependencies at compile time; (+) Simplifies compiler complexity; (+) Allows efficient execution on different pipelines; (-) Increased hardware complexity; (-) Higher power consumption; (-) Possible imprecise exceptions.
+
+\noindent\textbf{Scoreboard}: Every instruction goes through scoreboard: it determines when the instruction can read its operands and begin execution; it monitors changes in hardware and decides when a stalled instruction can resume execution; it controls then instruction can write results. In \textbf{Tomasulo} The control logic and the buffers are distributed with FUs. RS allow for: Register Renaming (the operands of the RSs are re- placed by values or pointers); Loop unrolling; Distribute management control.
+
+\noindent \textbf{HW speculation} combines: Dynamic Branch Prediction to choose which in- struction to execute; Dynamic Scheduling supporting out-of-order execution but in-order commit to prevent any irrevocable actions until an instruction commits; Speculation: to execute instructions before control dependencies are solved. The idea is allowing instruction to execute freely and out-of-order, based on speculation, but allow to update the RF or the memory only when an instruction is no longer speculative.
+
+
+\noindent \textbf{ROB} completely replaces store buffers; renaming function of RSs completely replaced; RSs now only queue operations to FUs between issue and execution; results are tagged with ROB entry number rather than with RS number, ROB entry must be tracked in the RS; all instructions excluding incorrectly predicted branches (or incorrectly speculated loads) commit when reaching head of ROB; when a incorrectly predicted branch reaches the head, ROB is flushed;
+
+\noindent The ideal machine must have:
+\textbf{Register renaming} infinite virtual registers and all WAW and WAR hazards are avoided;
+\textbf{Branch prediction} perfect, no mispredictions; \textbf{Jump} prediction all jumps perfectly predicted; \textbf{Memory address alias analysis} addresses are known and a store can be moved before a load provided the addresses not equal; \textbf{One cycle latency} for all instructions unlimited number of instructions issued per clock cycle; Number of Fus, number of busses, write ports sufficiently. Dynamic analysis is necessary to approach perfect branch prediction (impossible at compile time!). A perfect dynamic-scheduled CPU should: Look arbitrarily far ahead to find set of instructions to issue, predict all branches perfectly; Rename all registers uses; Determine whether there are data dependencies among instructions in the issue packet, rename if necessary; Determine if memory dependencies exist among issuing instructions, handle them; Provide enough replicated functional units to allow
+all ready instructions to issue.
+
+
+
+\noindent \textbf{GPU vs CPU} A GPU is tailored for high parallel operation while a CPU executes programs serially. For this reason, GPUs have many parallel execution units and higher transistor counts, while CPUs have few execution units and higher clock speeds. A GPU is for the most part deterministic in its operation. GPUs have much deeper pipelines (several thousand stages vs 10-20 for CPUs). GPUs have significantly faster and more advanced memory interfaces as they need to shift around a lot more data than CPUs.
+
+\noindent \textbf{Shared Memory} (+) implicit communication (loads/stores); (+) low overhead when cached. (-) complex to build in way that scales well - e.g., distance between core and memory may become too much cutting down performance; (-) requires synchronization operations; (-) hard to control data placement within caching system.
+
+\noindent \textbf{Message Passing} (+) explicit communication (sending/receiving of mes- sages); (+) easier to control data placement (no automatic caching); (-) message passing overhead can be quite high; (-) more complex to program; (-) introduces question of reception technique (interrupts/polling)
+
+\noindent \textbf{Centralized shared-memory architectures} at most few dozen processor chips (< 100 cores); Large caches, single memory multiple banks; Often called symmetric multiprocessors (SMP) and the style of architecture called Uniform Memory Access (UMA). \textbf{Distributed memory architectures}: To support large processor count; Requires high-bandwidth interconnect; (-) data communication among processors; Non Uniform Memory Access (NUMA)
+
+
+
+\noindent \textbf{Cache Write Policies}: \textbf{Write-through}: Synchronous write to cache and backing store. \textbf{Write-back}: initially, writing is done only to the cache. The write to the backing store is postponed until the modified content is about to be replaced by another cache block.
+
+\noindent \textbf{Write Miss Policies}: \textbf{Write allocate}: Loads data into cache on a write miss, then performs a write-hit. \textbf{No-write allocate}: Writes directly to backing store on a write miss without loading data into cache.
+
+\noindent \textbf{Coherence}: Defines reads and writes to the same memory location. \textbf{Consistency}: Defines reads and writes with respect to other memory locations.
+
+
+
+
+
+
+
+
+\end{multicols}
 \end{document}
